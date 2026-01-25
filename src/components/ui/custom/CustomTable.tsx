@@ -1,4 +1,3 @@
-
 import React from "react";
 import {
   Table,
@@ -62,7 +61,7 @@ export default function CustomTable<T>({
   // Get current page data
   const currentData = data?.slice(
     (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
+    currentPage * itemsPerPage,
   );
 
   // page numbers to display
@@ -136,8 +135,8 @@ export default function CustomTable<T>({
                     header.align === "center"
                       ? "text-center"
                       : header.align === "right"
-                      ? "text-right"
-                      : "text-left"
+                        ? "text-right"
+                        : "text-left"
                   }`}
                 >
                   {header.label}
@@ -165,7 +164,7 @@ export default function CustomTable<T>({
               onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
               disabled={currentPage === 1}
               aria-label="Previous page"
-              className="p-2 rounded-md hover:bg-gray-200 active:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
+              className="p-2 rounded-xl hover:bg-gray-200 active:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
               style={{ minWidth: "40px", minHeight: "40px" }}
             >
               <ChevronLeft size={18} />
@@ -185,15 +184,15 @@ export default function CustomTable<T>({
                   onClick={() => setCurrentPage(Number(number))}
                   aria-label={`Page ${number}`}
                   aria-current={currentPage === number ? "page" : undefined}
-                  className={`min-w-[35px] min-h-[35px] text-base rounded-md flex items-center justify-center text-sm touch-manipulation ${
+                  className={`min-w-[35px] min-h-[35px] text-base rounded-3xl flex items-center justify-center text-sm touch-manipulation ${
                     currentPage === number
-                      ? "bg-kv-primary text-white"
+                      ? "bg-kv-secondary hover:bg-kv-secondary text-kv-primary"
                       : "text-gray-700 hover:bg-kv-secondary active:bg-gray-300"
                   }`}
                 >
                   {number}
                 </button>
-              )
+              ),
             )}
 
             <button

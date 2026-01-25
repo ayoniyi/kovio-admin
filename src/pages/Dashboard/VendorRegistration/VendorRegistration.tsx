@@ -15,88 +15,85 @@ import { useUserRequest } from "@/utils/requestMethods";
 //const TABS = ["New Bookings", "Ongoing", "Completed", "Cancelled"] as const;
 
 const VendorRegistration = () => {
-    const navigate = useNavigate();
-    
-    const [authState] = useContext<any>(AuthContext);
-    const userId = authState?.user?._id;
-   
+  const navigate = useNavigate();
 
-    const userRequest = useUserRequest();
-    const bookingsQuery: any = useQuery({
-        queryKey: ["bookings"],
-        queryFn: () =>
-          userRequest
-            ?.get(
-              `/bookings/vendor/${userId}?page=1&limit=10`
-            )
-            .then((res: any) => {
-              return {
-                results: res.data,
-              };
-            }),
-      });
+  const [authState] = useContext<any>(AuthContext);
+  const userId = authState?.user?._id;
 
-    console.log("bookingsQuery ??", bookingsQuery?.data?.results?.data);
-    const bookingsData = bookingsQuery?.data?.results?.data;
+  const userRequest = useUserRequest();
+  const vendorRegistrationsQuery: any = useQuery({
+    queryKey: ["vendor-registrations"],
+    queryFn: () =>
+      userRequest
+        ?.get(`/bookings/admin/pending/vendors?page=1&limit=10`)
+        .then((res: any) => {
+          return {
+            results: res.data,
+          };
+        }),
+  });
 
-    // Filter bookings based on selected tab
- ;
+  // console.log(
+  //   "vendorRegistrationsQuery ??",
+  //   vendorRegistrationsQuery?.data?.results,
+  // );
+  const vendorRegistrationsData = vendorRegistrationsQuery?.data?.results?.data;
 
-  if (bookingsQuery?.isLoading) {
+  // Filter bookings based on selected tab
+  if (vendorRegistrationsQuery?.isLoading) {
     return <Loader />;
   }
 
-
   return (
     <div className="min-h-screen">
-   
-    <Card className="rounded-3xl shadow-sm">
-      <div className="pt-0 pb-2 pl-4 pr-4 border-b space-y-4 mb-[-1.5rem]">
-        {/* Tabs */}
+      <Card className="rounded-3xl shadow-sm">
+        <div className="pt-0 pb-2 pl-4 pr-4 border-b space-y-4 mb-[-1.5rem]">
+          {/* Tabs */}
 
-        {/* Your Bookings Header */}
-        <div className="flex items-center justify-between">
-          <h2 className="text-base font-gabaritoHeading lg:text-xl font-semibold tracking-extra-wide text-kv-semi-black">
-           Pending Applications
-          </h2>
+          {/* Your Bookings Header */}
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-gabaritoHeading lg:text-xl font-semibold tracking-extra-wide text-kv-semi-black">
+              Pending Applications
+            </h2>
+          </div>
         </div>
-      </div>
 
-      <CustomTable
-        headers={[
-          { label: "Vendor Name" },
-          // { label: "Business Name" },
-          { label: "Vendor Type" },
-          { label: "Location" },
-          { label: "Action" },
-        ]}
-        data={[]}
-        renderRow={(vendor: any) => (
-          <TableRow key={vendor?._id}>
-            <TableCell>
-              {vendor?.name}
-            </TableCell>
-            <TableCell>
-              {vendor?.vendorType}
-            </TableCell>
+        <CustomTable
+          headers={[
+            { label: "Vendor Name" },
+            // { label: "Business Name" },
+            { label: "Vendor Type" },
+            { label: "Location" },
+            { label: "Action" },
+          ]}
+          data={vendorRegistrationsData}
+          renderRow={(vendor: any) => (
+            <TableRow key={vendor?._id}>
+              <TableCell className="pl-4">
+                {vendor?.businessInfo?.businessName ||
+                  vendor?.firstName + " " + vendor?.lastName}
+              </TableCell>
+              <TableCell>{vendor?.businessInfo?.businessType}</TableCell>
 
-            <TableCell>{vendor?.location}</TableCell>
-            <TableCell>
-              <button
-                onClick={() =>
-                  navigate(`/vendor/vendors/${vendor?._id}`)
-                }
-                className="text-kv-primary hover:text-orange-600 font-medium"
-              >
-                View Vendor
-              </button>
-            </TableCell>
-          </TableRow>
-        )}
-      />
-    </Card>
-  </div>
-  )
-}
+              <TableCell>
+                {vendor?.businessInfo?.businessStreet +
+                  ", " +
+                  vendor?.businessInfo?.city}
+              </TableCell>
+              <TableCell>
+                <button
+                  onClick={() => navigate(`/vendor/vendors/${vendor?._id}`)}
+                  className="text-kv-primary hover:text-orange-600 font-medium"
+                >
+                  View Vendor
+                </button>
+              </TableCell>
+            </TableRow>
+          )}
+        />
+      </Card>
+    </div>
+  );
+};
 
-export default VendorRegistration
+export default VendorRegistration;

@@ -1,16 +1,41 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff } from "lucide-react";
-import Logo from "../../assets/main/logo.svg"
-import { Link } from "react-router-dom";
-
+import Logo from "../../assets/main/logo.svg";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { publicRequest } from "@/utils/requestMethods";
+import { toast } from "@/hooks/use-toast";
 
 const CreatePassword = () => {
-    const [showPassword, setShowPassword] = useState(false);
-    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [searchParams] = useSearchParams();
+  const [code, setCode] = useState<string>("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [userInput, setUserInput] = useState({
+    password: "",
+    confirmPassword: "",
+  });
+  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
 
+  useEffect(() => {
+    // Get code from URL query parameter
+    const codeParam = searchParams.get("code");
+    if (codeParam) {
+      setCode(codeParam);
+    }
+  }, [searchParams]);
+
+  console.log("CODE::: ", code);
+  const inputHandler = (event: any) => {
+    const value = event.target.value;
+    setUserInput({
+      ...userInput,
+      [event.target.name]: value,
+    });
+  };
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
@@ -19,13 +44,87 @@ const CreatePassword = () => {
     setShowConfirmPassword(!showConfirmPassword);
   };
 
-    return (
-        <div className="min-h-screen w-full flex flex-col items-center justify-center bg-[#F8F9FA] px-4">
+  const handleCreatePassword = async (e: any) => {
+    e.preventDefault();
+
+    if (userInput.password !== userInput.confirmPassword) {
+      toast({
+        title: "Passwords do not match",
+        description: "Please enter the same password",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (userInput.password.length < 8) {
+      toast({
+        title: "Password must be at least 8 characters long",
+        description:
+          "Please enter a password that is at least 8 characters long",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check if password contains both letters and numbers
+    const hasLetter = /[a-zA-Z]/.test(userInput.password);
+    const hasNumber = /\d/.test(userInput.password);
+
+    if (!hasLetter || !hasNumber) {
+      toast({
+        title: "Password must contain both letters and numbers",
+        description:
+          "Please enter a password that includes both letters and numbers",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!code) {
+      toast({
+        title: "Invalid code",
+        description: "No verification code found",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const endpoint = `users/admin/set-password`;
+      const response = await publicRequest.post(endpoint, {
+        code: code,
+        // ||
+        // "92f70b3b9352d5b767eb1aedfa47cbe208547e6a13d3c4d3d59be725b9412ae2",
+        password: userInput.password,
+      });
+      console.log("RESPONSE::: ", response);
+
+      toast({
+        title: "Success",
+        description: "Password created successfully",
+      });
+
+      // Redirect to login or dashboard
+      navigate("/login");
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description:
+          error?.response?.data?.message || "Failed to create password",
+        variant: "destructive",
+      });
+      console.log(error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  return (
+    <div className="min-h-screen w-full flex flex-col items-center justify-center bg-[#F8F9FA] px-4">
       <div className="w-full max-w-[400px] flex flex-col items-center">
         {/* Logo Section */}
         <div className="flex items-center gap-3 mb-8">
-          <div >
-             <img src={Logo} alt="Kovio Logo" />
+          <div>
+            <img src={Logo} alt="Kovio Logo" />
           </div>
           {/* <span className="text-xl text-[#1A1A1A] font-sans">
             KOVIO <span className="font-bold">Admin</span>
@@ -38,21 +137,30 @@ const CreatePassword = () => {
         </h1>
 
         <div className="w-full max-w-[400px] flex flex-col items-center">
-            <p className="text-[#1A1A1A] text-normal  tracking-wide ml-1 font-inter mb-5 opacity-60">Create your new password to access your account</p>
+          <p className="text-[#1A1A1A] text-normal  tracking-wide ml-1 font-inter mb-5 opacity-60">
+            Create your new password to access your account
+          </p>
         </div>
 
         {/* Form */}
-        <form className="w-full space-y-6">
+        <form className="w-full space-y-6" onSubmit={handleCreatePassword}>
           <div className="space-y-2">
-            <Label htmlFor="password" className="text-[#888888] text-normal capitalize tracking-wide ml-1 ">
+            <Label
+              htmlFor="password"
+              className="text-[#888888] text-normal capitalize tracking-wide ml-1 "
+            >
               Password
             </Label>
-           <div className="relative">
+            <div className="relative">
               <Input
                 id="password"
                 type={showPassword ? "text" : "password"}
                 placeholder="****"
                 className="rounded-full h-12 bg-white border-gray-200 pr-12 focus:ring-[#FF4E00] focus:border-[#FF4E00] mt-2"
+                value={userInput.password}
+                onChange={inputHandler}
+                name="password"
+                required
               />
               <button
                 type="button"
@@ -69,7 +177,10 @@ const CreatePassword = () => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="confirmPassword" className="text-[#888888] text-normal capitalize tracking-wide ml-1">
+            <Label
+              htmlFor="confirmPassword"
+              className="text-[#888888] text-normal capitalize tracking-wide ml-1"
+            >
               Confirm New Password
             </Label>
             <div className="relative">
@@ -78,6 +189,10 @@ const CreatePassword = () => {
                 type={showConfirmPassword ? "text" : "password"}
                 placeholder="****"
                 className="rounded-full h-12 bg-white border-gray-200 pr-12 focus:ring-[#FF4E00] focus:border-[#FF4E00] mt-2"
+                value={userInput.confirmPassword}
+                onChange={inputHandler}
+                name="confirmPassword"
+                required
               />
               <button
                 type="button"
@@ -93,21 +208,21 @@ const CreatePassword = () => {
             </div>
           </div>
 
-         
-
           {/* Login Button */}
           <Button
             type="submit"
             //className="cursor-pointer w-full h-12 rounded-full bg-[#FF4E00] hover:bg-[#E04500] text-white font-bold text-base mt-2"
             className="cursor-pointer w-full h-12 font-interTightText bg-kv-primary hover:bg-kv-primary/90 text-white rounded-full transition-all duration-200 disabled:opacity-50"
-        aria-label="Save Password"
+            aria-label="Save Password"
+            disabled={isLoading}
           >
-          Save Password
+            {isLoading ? "Loading..." : "Save Password"}
+            {/* Save Password */}
           </Button>
         </form>
       </div>
     </div>
-    )
-}
+  );
+};
 
-export default CreatePassword
+export default CreatePassword;
