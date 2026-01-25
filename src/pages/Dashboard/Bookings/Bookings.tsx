@@ -112,7 +112,7 @@ const Bookings = () => {
               <TableCell>{booking?.eventLocation}</TableCell>
               <TableCell>
                 <button
-                  onClick={() => navigate(`/vendor/bookings/${booking?._id}`)}
+                  onClick={() => navigate(`/bookings/${booking?._id}`)}
                   className="text-kv-primary hover:text-orange-600 font-medium"
                 >
                   View Booking

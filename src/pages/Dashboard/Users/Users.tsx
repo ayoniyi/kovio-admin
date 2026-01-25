@@ -71,7 +71,7 @@ const Users = () => {
               </TableCell>
               <TableCell>{user?.email}</TableCell>
               <TableCell>{user?.phoneNumber || "N/A"}</TableCell>
-              <TableCell>{user?.bookings?.length}</TableCell>
+              <TableCell>{user?.bookingCount}</TableCell>
               <TableCell>
                 <button
                   onClick={() => navigate(`/vendor/users/${user?._id}`)}

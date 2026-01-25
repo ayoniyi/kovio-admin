@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import Login from "../pages/Auth/Login";
-import CreatePassword from "../pages/Auth/CreatePassword"
+import CreatePassword from "../pages/Auth/CreatePassword";
 import ResetPassword from "../pages/Auth/ResetPassword";
 import ForgotPassword from "../pages/Auth/ForgotPassword";
 import EnterCode from "../pages/Auth/EnterCode";
@@ -14,6 +14,7 @@ import Users from "../pages/Dashboard/Users/Users";
 import Transactions from "../pages/Dashboard/Transactions/Transactions";
 import Withdrawals from "../pages/Dashboard/Withdrawals/Withdrawals";
 import Settings from "../pages/Dashboard/Settings/Settings";
+import BookingDetails from "@/pages/Dashboard/Bookings/BookingDetails";
 
 export interface RouteType {
   path: string;
@@ -26,19 +27,27 @@ export const authRoutes: RouteType[] = [
   { path: "/create-password", element: <CreatePassword /> },
   { path: "/forgot-password", element: <ForgotPassword /> },
   { path: "/enter-code", element: <EnterCode /> },
-  { path: "/reset-password", element: <ResetPassword/> },
-  { path: "/reset-successful", element: <ResetSuccessful/> },
+  { path: "/reset-password", element: <ResetPassword /> },
+  { path: "/reset-successful", element: <ResetSuccessful /> },
 ];
 
 export const dashboardRoutes: RouteType[] = [
   { path: "/dashboard", name: "Dashboard", element: <Overview /> },
 
-
-   { path: "/bookings", name: "Bookings", element: <Bookings /> },
+  { path: "/bookings", name: "Bookings", element: <Bookings /> },
+  {
+    path: "/bookings/:bookingId",
+    name: "Booking Details",
+    element: <BookingDetails />,
+  },
 
   { path: "/vendors", name: "Vendors", element: <Vendors /> },
 
-  { path: "/vendor-registrations", name: "Vendor Registrations", element: <VendorRegistration /> },
+  {
+    path: "/vendor-registrations",
+    name: "Vendor Registrations",
+    element: <VendorRegistration />,
+  },
 
   { path: "/users", name: "Users", element: <Users /> },
 

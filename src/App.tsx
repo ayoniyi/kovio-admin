@@ -19,16 +19,15 @@ import Overview from "./pages/Dashboard/Overview";
 function App() {
   const queryClient = new QueryClient();
   const [authState] = useContext(AuthContext);
-  console.log("authstate e?",authState);
-
+  console.log("authstate e?", authState);
 
   return (
-     <QueryClientProvider client={queryClient}>
+    <QueryClientProvider client={queryClient}>
       <Toaster />
-     <div className="app">
-      <Router>
-            <Routes>
-              {/* <Route path="/login" element={<Login />} />
+      <div className="app">
+        <Router>
+          <Routes>
+            {/* <Route path="/login" element={<Login />} />
               <Route path="/create-password" element={<CreatePassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -37,43 +36,43 @@ function App() {
               
               
               <Route path="/overview" element={<Overview />} /> */}
+            <Route
+              path="/"
+              element={
+                authState?.user ? (
+                  <DashboardLayout>
+                    <Overview />
+                  </DashboardLayout>
+                ) : (
+                  // <CreatePassword />
+                  <Login />
+                )
+              }
+            />
+
+            {authRoutes.map((route, id) => (
+              <Route key={id} path={route.path} element={route.element} />
+            ))}
+
+            {dashboardRoutes.map((route: RouteType, id) => (
               <Route
-                path="/"
+                key={id}
+                path={route.path}
                 element={
                   authState?.user ? (
-                    <DashboardLayout>
-                      <Overview />
-                    </DashboardLayout>
-                    // <CreatePassword />
+                    <DashboardLayout>{route.element}</DashboardLayout>
                   ) : (
                     <Login />
                   )
                 }
               />
-
-{authRoutes.map((route, id) => (
-                <Route key={id} path={route.path} element={route.element} />
-              ))}
-
-              {dashboardRoutes.map((route: RouteType, id) => (
-                <Route
-                  key={id}
-                  path={route.path}
-                  element={
-                    authState?.user ? (
-                      <DashboardLayout>{route.element}</DashboardLayout>
-                    ) : (
-                      <Login />
-                    )
-                  }
-                />
-              ))}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </Router>
-     </div>
+            ))}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Router>
+      </div>
     </QueryClientProvider>
-  )
+  );
 }
 
-export default App
+export default App;

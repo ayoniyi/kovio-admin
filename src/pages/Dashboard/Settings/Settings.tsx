@@ -1,5 +1,13 @@
 import { useState, useContext, useEffect } from "react";
-import { Eye, EyeOff, User, Mail, Loader2 } from "lucide-react";
+import {
+  Eye,
+  EyeOff,
+  User,
+  Mail,
+  Loader2,
+  ArrowLeft,
+  ChevronDown,
+} from "lucide-react";
 import { AuthContext } from "@/context/AuthContext";
 import { toast } from "@/hooks/use-toast";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -11,6 +19,7 @@ import CustomTable from "@/components/ui/custom/CustomTable";
 import CustomButton from "@/components/ui/custom/button";
 
 type TabType = "Profile" | "Administrators";
+type AdminViewType = "list" | "add";
 
 interface ProfileFormData {
   firstName: string;
@@ -26,13 +35,30 @@ interface PasswordFormData {
   confirmPassword: string;
 }
 
+interface AddAdminFormData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  role: string;
+}
+
 const Settings = () => {
   const [activeTab, setActiveTab] = useState<TabType>("Profile");
+  const [adminView, setAdminView] = useState<AdminViewType>("list");
   const [isLoading, setIsLoading] = useState(false);
+  const [isAddingAdmin, setIsAddingAdmin] = useState(false);
 
   const [authState] = useContext<any>(AuthContext);
   const user = authState?.user?.user;
   console.log("USER::: ", user);
+
+  // Add Admin form state
+  const [addAdminData, setAddAdminData] = useState<AddAdminFormData>({
+    firstName: "",
+    lastName: "",
+    email: "",
+    role: "",
+  });
 
   // Profile form state
   const [profileData, setProfileData] = useState<ProfileFormData>({
@@ -165,6 +191,111 @@ const Settings = () => {
       setIsLoading(false);
     },
   });
+
+  // Add Admin mutation
+  const addAdminMutation = useMutation({
+    mutationFn: async (data: any) => userRequest?.post(``, data), // TODO: Add endpoint here
+    onError: (e: any) => {
+      console.log("ERROR::: ", e?.response?.data?.message);
+      toast({
+        title: "Error",
+        description: e?.response?.data?.message || "Sorry an error occured.",
+        variant: "destructive",
+      });
+      setIsAddingAdmin(false);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["administrators"] });
+      toast({
+        title: "Success",
+        description: "Administrator added successfully",
+      });
+      setIsAddingAdmin(false);
+      // Reset form and go back to list
+      setAddAdminData({
+        firstName: "",
+        lastName: "",
+        email: "",
+        role: "",
+      });
+      setAdminView("list");
+    },
+  });
+
+  // Handle Add Admin form field change
+  const handleAddAdminChange = (
+    field: keyof AddAdminFormData,
+    value: string,
+  ) => {
+    setAddAdminData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  // Handle Add Admin form submission
+  const handleAddAdmin = () => {
+    // Validate fields
+    if (!addAdminData.firstName.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter first name",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!addAdminData.lastName.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter last name",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!addAdminData.email.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter email",
+        variant: "destructive",
+      });
+      return;
+    }
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(addAdminData.email)) {
+      toast({
+        title: "Error",
+        description: "Please enter a valid email address",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!addAdminData.role) {
+      toast({
+        title: "Error",
+        description: "Please select a role",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsAddingAdmin(true);
+    const data = {
+      firstName: addAdminData.firstName,
+      lastName: addAdminData.lastName,
+      email: addAdminData.email,
+      role: addAdminData.role,
+    };
+    addAdminMutation.mutate(data);
+  };
+
+  // Handle cancel add admin
+  const handleCancelAddAdmin = () => {
+    setAddAdminData({
+      firstName: "",
+      lastName: "",
+      email: "",
+      role: "",
+    });
+    setAdminView("list");
+  };
 
   const handleSaveChanges = async () => {
     // Validate password fields if any are filled
@@ -498,65 +629,184 @@ const Settings = () => {
       )}
 
       {activeTab === "Administrators" && (
-        // <div className="text-center py-12">
-        //   <p className="text-gray-500">
-        //     Administrators management coming soon...
-        //   </p>
-        // </div>
-        <div className="min-h-screen">
-          <Card className="rounded-3xl shadow-sm">
-            <div className="pt-0 pb-2 pl-4 pr-4 border-b space-y-4 mb-[-1.5rem]">
-              {/* Tabs */}
-              <div className="flex ">
-                {/* Search Bar */}
-                <div className="flex items-center justify-between lg:w-[25%] w-full mb-2">
-                  <SearchBar
-                    placeholder="Search"
-                    value={searchQuery}
-                    onChange={setSearchQuery}
-                    className="w-full"
-                  />
+        <>
+          {adminView === "list" && (
+            <div className="min-h-screen">
+              <Card className="rounded-3xl shadow-sm">
+                <div className="pt-0 pb-2 pl-4 pr-4 border-b space-y-4 mb-[-1.5rem]">
+                  {/* Tabs */}
+                  <div className="flex ">
+                    {/* Search Bar */}
+                    <div className="flex items-center justify-between lg:w-[25%] w-full mb-2">
+                      <SearchBar
+                        placeholder="Search"
+                        value={searchQuery}
+                        onChange={setSearchQuery}
+                        className="w-full"
+                      />
+                    </div>
+                    <CustomButton
+                      children="Add Administrator"
+                      onClick={() => setAdminView("add")}
+                      className="w-fit ml-6"
+                    />
+                  </div>
                 </div>
-                <CustomButton
-                  children="Add Administrator"
-                  onClick={() => {}}
-                  className="w-fit ml-6"
+
+                <CustomTable
+                  headers={[
+                    { label: "First Name" },
+                    { label: "Last Name" },
+                    { label: "Email" },
+                    { label: "Role" },
+                    { label: "Action" },
+                  ]}
+                  data={administratorsData}
+                  renderRow={(admin: any) => (
+                    <TableRow key={admin?._id}>
+                      <TableCell className="pl-4 pt-2 pb-2">
+                        {admin?.firstName}
+                      </TableCell>
+                      <TableCell className="pt-6 pb-6 pl-4">
+                        {admin?.lastName}
+                      </TableCell>
+                      <TableCell className="pt-2 pb-2">
+                        {admin?.email}
+                      </TableCell>
+                      <TableCell className="pt-2 pb-2">{admin?.role}</TableCell>
+                      <TableCell className="pt-2 pb-2">
+                        <div className="flex gap-2">
+                          <p className="text-black font-medium cursor-pointer">
+                            Edit
+                          </p>
+                          <p className="ml-2 text-kv-primary hover:text-orange-600 font-medium cursor-pointer">
+                            Deactivate
+                          </p>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
                 />
+              </Card>
+            </div>
+          )}
+
+          {adminView === "add" && (
+            <div className="min-h-screen">
+              {/* Header */}
+              <h1 className="text-2xl font-bold text-gray-900 mb-2">
+                Add Administrator
+              </h1>
+              <button
+                onClick={handleCancelAddAdmin}
+                className="flex items-center gap-2 text-gray-700 hover:text-gray-900 mb-10 cursor-pointer"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span className="text-sm">Go back</span>
+              </button>
+
+              {/* Form */}
+              <div className="max-w-3xl">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                  {/* First Name */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      First Name
+                    </label>
+                    <input
+                      type="text"
+                      value={addAdminData.firstName}
+                      onChange={(e) =>
+                        handleAddAdminChange("firstName", e.target.value)
+                      }
+                      placeholder="Enter"
+                      className="w-full px-4 py-3 border border-gray-200 rounded-full text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-transparent"
+                    />
+                  </div>
+
+                  {/* Last Name */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Last Name
+                    </label>
+                    <input
+                      type="text"
+                      value={addAdminData.lastName}
+                      onChange={(e) =>
+                        handleAddAdminChange("lastName", e.target.value)
+                      }
+                      placeholder="Enter"
+                      className="w-full px-4 py-3 border border-gray-200 rounded-full text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-transparent"
+                    />
+                  </div>
+
+                  {/* Email */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Email
+                    </label>
+                    <input
+                      type="email"
+                      value={addAdminData.email}
+                      onChange={(e) =>
+                        handleAddAdminChange("email", e.target.value)
+                      }
+                      placeholder="Enter"
+                      className="w-full px-4 py-3 border border-gray-200 rounded-full text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-transparent"
+                    />
+                  </div>
+
+                  {/* Role */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Role
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={addAdminData.role}
+                        onChange={(e) =>
+                          handleAddAdminChange("role", e.target.value)
+                        }
+                        className="w-full px-4 py-3 border border-gray-200 rounded-full text-gray-900 appearance-none focus:outline-none focus:ring-2 focus:ring-gray-200 focus:border-transparent cursor-pointer"
+                      >
+                        <option value="" disabled>
+                          Select
+                        </option>
+                        <option value="Super Admin">Super Admin</option>
+                        <option value="Admin">Admin</option>
+                        {/* <option value="Moderator">Moderator</option> */}
+                      </select>
+                      <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex items-center gap-4">
+                  <button
+                    type="button"
+                    onClick={handleCancelAddAdmin}
+                    className="mt-8 px-6 py-2.5 border border-gray-300 rounded-full text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleAddAdmin}
+                    disabled={isAddingAdmin}
+                    className="mt-8 px-6 py-2.5 bg-[#FF4800] text-white rounded-full text-sm font-medium hover:bg-[#E64100] transition-colors disabled:opacity-50 cursor-pointer"
+                  >
+                    {isAddingAdmin ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      "Add Admin"
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
-
-            <CustomTable
-              headers={[
-                { label: "First Name" },
-                { label: "Last Name" },
-                { label: "Email" },
-
-                { label: "Role" },
-                { label: "Action" },
-              ]}
-              data={administratorsData}
-              renderRow={(admin: any) => (
-                <TableRow key={admin?._id}>
-                  <TableCell className="pl-4 pt-2 pb-2">
-                    {admin?.firstName}
-                  </TableCell>
-                  <TableCell className="pt-6 pb-6">{admin?.lastName}</TableCell>
-                  <TableCell className="pt-2 pb-2">{admin?.email}</TableCell>
-
-                  <TableCell className="pt-2 pb-2">{admin?.role}</TableCell>
-                  <TableCell className="pt-2 pb-2">
-                    <div className="flex gap-2">
-                      <p className="text-black font-medium">Edit</p>
-                      <p className="text-kv-primary hover:text-orange-600 font-medium">
-                        Deactivate
-                      </p>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              )}
-            />
-          </Card>
-        </div>
+          )}
+        </>
       )}
     </div>
   );
