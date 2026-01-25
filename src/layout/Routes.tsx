@@ -15,6 +15,8 @@ import Transactions from "../pages/Dashboard/Transactions/Transactions";
 import Withdrawals from "../pages/Dashboard/Withdrawals/Withdrawals";
 import Settings from "../pages/Dashboard/Settings/Settings";
 import BookingDetails from "@/pages/Dashboard/Bookings/BookingDetails";
+import VendorDetails from "@/pages/Dashboard/Vendors/VendorDetails";
+import VendorRegistrationDetails from "@/pages/Dashboard/VendorRegistration/VendorRegistrationDetails";
 
 export interface RouteType {
   path: string;
@@ -42,11 +44,21 @@ export const dashboardRoutes: RouteType[] = [
   },
 
   { path: "/vendors", name: "Vendors", element: <Vendors /> },
+  {
+    path: "/vendors/:vendorId",
+    name: "Vendor Details",
+    element: <VendorDetails />,
+  },
 
   {
     path: "/vendor-registrations",
     name: "Vendor Registrations",
     element: <VendorRegistration />,
+  },
+  {
+    path: "/vendor-registrations/:vendorRegistrationId",
+    name: "Vendor Registration Details",
+    element: <VendorRegistrationDetails />,
   },
 
   { path: "/users", name: "Users", element: <Users /> },

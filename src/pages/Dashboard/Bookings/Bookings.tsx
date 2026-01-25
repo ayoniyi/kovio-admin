@@ -97,11 +97,11 @@ const Bookings = () => {
           renderRow={(booking: any) => (
             <TableRow key={booking?._id}>
               {booking?.userid ? (
-                <TableCell className="pl-4">
+                <TableCell className="pl-4 pt-4 pb-4">
                   {booking?.userid?.firstName} {booking?.userid?.lastName}
                 </TableCell>
               ) : (
-                <TableCell className="pl-4">
+                <TableCell className="pl-4 pt-4 pb-4">
                   {booking?.vendorid?.businessInfo?.businessName}
                 </TableCell>
               )}
@@ -109,11 +109,13 @@ const Bookings = () => {
                 {formatDate(booking?.eventday)} {formatTime(booking?.eventtime)}
               </TableCell>
 
-              <TableCell>{booking?.eventLocation}</TableCell>
+              <TableCell className="capitalize">
+                {booking?.eventLocation}
+              </TableCell>
               <TableCell>
                 <button
                   onClick={() => navigate(`/bookings/${booking?._id}`)}
-                  className="text-kv-primary hover:text-orange-600 font-medium"
+                  className="text-kv-primary hover:text-orange-600 font-medium cursor-pointer"
                 >
                   View Booking
                 </button>
