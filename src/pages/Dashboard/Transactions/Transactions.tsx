@@ -70,7 +70,7 @@ const Transactions = () => {
           data={transactionsData}
           renderRow={(transaction: any) => (
             <TableRow key={transaction?._id}>
-              <TableCell className="ml-4 pt-5 pb-5">
+              <TableCell className="ml-4 pl-4 pt-5 pb-5">
                 {formatDate(transaction?.createdAt)}
               </TableCell>
               <TableCell>
@@ -81,10 +81,13 @@ const Transactions = () => {
                 {transaction?.method}
               </TableCell>
               <TableCell>{transaction?.amount}</TableCell>
-              <TableCell className="capitalize">
+              <TableCell
+                className={`capitalize ${transaction?.status === "pending" ? "text-yellow-500" : transaction?.status === "successful" ? "text-green-500" : " text-red-500"}`}
+                //className="capitalize text-kv-primary"
+              >
                 {transaction?.status}
               </TableCell>
-              <TableCell>
+              {/* <TableCell>
                 <button
                   onClick={() => navigate(`/transactions/${transaction?._id}`)}
                   className="text-kv-primary hover:text-orange-600 font-medium"
@@ -110,7 +113,7 @@ const Transactions = () => {
                     />
                   </svg>
                 </button>
-              </TableCell>
+              </TableCell> */}
             </TableRow>
           )}
         />

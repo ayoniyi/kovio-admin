@@ -66,8 +66,10 @@ const Vendors = () => {
 
   // Suspend vendor mutation
   const suspendMutation = useMutation({
-    mutationFn: async (vendorId: string) =>
-      userRequest?.patch(``, { vendorId }), // TODO: Add suspend endpoint here
+    mutationFn: async ({ userId, user }: { userId: string; user: any }) =>
+      userRequest?.patch(`/bookings/admin/${userId}/suspend`, {
+        value: !user.suspended,
+      }),
     onError: (e: any) => {
       toast({
         title: "Error",
@@ -80,7 +82,7 @@ const Vendors = () => {
       queryClient.invalidateQueries({ queryKey: ["vendors"] });
       toast({
         title: "Success",
-        description: "Vendor suspended successfully",
+        description: "Successfully updated vendor status",
       });
       setIsActionLoading(false);
       closeModal();
@@ -89,8 +91,10 @@ const Vendors = () => {
 
   // Deactivate vendor mutation
   const deactivateMutation = useMutation({
-    mutationFn: async (vendorId: string) =>
-      userRequest?.patch(``, { vendorId }), // TODO: Add deactivate endpoint here
+    mutationFn: async ({ userId, user }: { userId: string; user: any }) =>
+      userRequest?.patch(`/bookings/admin/${userId}/block`, {
+        value: !user.blocked,
+      }),
     onError: (e: any) => {
       toast({
         title: "Error",
@@ -104,7 +108,7 @@ const Vendors = () => {
       queryClient.invalidateQueries({ queryKey: ["vendors"] });
       toast({
         title: "Success",
-        description: "Vendor deactivated successfully",
+        description: "Successfully updated vendor status",
       });
       setIsActionLoading(false);
       closeModal();
@@ -129,15 +133,28 @@ const Vendors = () => {
     setSelectedVendor(null);
   };
 
+  // // Handle confirm action
+  // const handleConfirmAction = () => {
+  //   if (!selectedVendor) return;
+  //   setIsActionLoading(true);
+
+  //   if (modalType === "suspend") {
+  //     suspendMutation.mutate(selectedVendor._id);
+  //   } else if (modalType === "deactivate") {
+  //     deactivateMutation.mutate(selectedVendor._id);
+  //   }
+  // };
+
   // Handle confirm action
-  const handleConfirmAction = () => {
+  const handleConfirmAction = (vendor: any) => {
     if (!selectedVendor) return;
     setIsActionLoading(true);
 
     if (modalType === "suspend") {
-      suspendMutation.mutate(selectedVendor._id);
+      console.log("vendor ??", vendor);
+      suspendMutation.mutate({ userId: vendor._id, user: vendor });
     } else if (modalType === "deactivate") {
-      deactivateMutation.mutate(selectedVendor._id);
+      deactivateMutation.mutate({ userId: vendor._id, user: vendor });
     }
   };
 
@@ -206,13 +223,17 @@ const Vendors = () => {
                           onClick={() => openModal("suspend", vendor)}
                           className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer"
                         >
-                          Suspend Vendor
+                          {vendor?.suspended
+                            ? "Unsuspend Vendor"
+                            : "Suspend Vendor"}
                         </button>
                         <button
                           onClick={() => openModal("deactivate", vendor)}
                           className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer"
                         >
-                          Deactivate Vendor
+                          {vendor?.blocked
+                            ? "Activate Vendor"
+                            : "Deactivate Vendor"}
                         </button>
                       </div>
                     )}
@@ -247,7 +268,7 @@ const Vendors = () => {
 
             {/* Title */}
             <h2 className="text-xl font-semibold text-gray-900 text-center mb-3">
-              Suspend Vendor
+              {selectedVendor?.suspended ? "Unsuspend" : "Suspend"} Vendor
             </h2>
 
             {/* Description */}
@@ -264,7 +285,7 @@ const Vendors = () => {
                 Cancel
               </button>
               <button
-                onClick={handleConfirmAction}
+                onClick={() => handleConfirmAction(selectedVendor)}
                 disabled={isActionLoading}
                 className="px-6 py-2.5 bg-[#FF4800] text-white rounded-full text-sm font-medium hover:bg-[#E64100] transition-colors disabled:opacity-50 cursor-pointer min-w-[120px]"
               >
@@ -302,7 +323,7 @@ const Vendors = () => {
 
             {/* Title */}
             <h2 className="text-xl font-semibold text-gray-900 text-center mb-3">
-              Deactivate Vendor
+              {selectedVendor?.blocked ? "Activate" : "Deactivate"} Vendor
             </h2>
 
             {/* Description */}
@@ -322,14 +343,14 @@ const Vendors = () => {
                 Cancel
               </button>
               <button
-                onClick={handleConfirmAction}
+                onClick={() => handleConfirmAction(selectedVendor)}
                 disabled={isActionLoading}
                 className="px-6 py-2.5 bg-[#FF4800] text-white rounded-full text-sm font-medium hover:bg-[#E64100] transition-colors disabled:opacity-50 cursor-pointer min-w-[130px]"
               >
                 {isActionLoading ? (
                   <Loader2 className="w-5 h-5 animate-spin mx-auto" />
                 ) : (
-                  "Yes, Deactivate"
+                  `Yes, ${selectedVendor?.blocked ? "Activate" : "Deactivate"}`
                 )}
               </button>
             </div>

@@ -1,4 +1,4 @@
-import { useContext, useState, useMemo } from "react";
+import { useContext, useState, useMemo, useRef } from "react";
 import { Card } from "../../../components/ui/card";
 import { TableCell, TableRow } from "../../../components/ui/table";
 import CustomTable from "../../../components/ui/custom/CustomTable";
@@ -10,17 +10,30 @@ import { AuthContext } from "../../../context/AuthContext";
 import { cn } from "../../../lib/utils";
 import { formatDate, formatPrice, formatTime } from "../../../utils/formatters";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useUserRequest } from "@/utils/requestMethods";
+import { toast } from "@/hooks/use-toast";
+import { Loader2 } from "lucide-react";
 
 //const TABS = ["New Bookings", "Ongoing", "Completed", "Cancelled"] as const;
 
 const Withdrawals = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  // Dropdown state - tracks which vendor's dropdown is open
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Toggle dropdown
+  const toggleDropdown = (vendorId: string) => {
+    setOpenDropdownId(openDropdownId === vendorId ? null : vendorId);
+  };
 
   const [authState] = useContext<any>(AuthContext);
   const userId = authState?.user?._id;
   const [searchQuery, setSearchQuery] = useState("");
+  const [isActionLoading, setIsActionLoading] = useState(false);
 
   const userRequest = useUserRequest();
   const withdrawalsQuery: any = useQuery({
@@ -38,7 +51,85 @@ const Withdrawals = () => {
   console.log("withdrawalsQuery ??", withdrawalsQuery?.data?.results?.data);
   const withdrawalsData = withdrawalsQuery?.data?.results?.data;
 
-  // Filter bookings based on selected tab
+  // Approve withdrawal mutation
+  const approveMutation = useMutation({
+    mutationFn: async ({
+      withdrawalId,
+      data,
+    }: {
+      withdrawalId: string;
+      data: any;
+    }) =>
+      userRequest?.patch(
+        `/wallet/admin/withdrawals/${withdrawalId}/status`,
+        data,
+      ), // TODO: Add approve endpoint here
+    onError: (e: any) => {
+      toast({
+        title: "Error",
+        description:
+          e?.response?.data?.message || "Failed to approve withdrawal",
+        variant: "destructive",
+      });
+      setIsActionLoading(false);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["withdrawals"] });
+      toast({
+        title: "Success",
+        description: "Withdrawal approved successfully",
+      });
+      setIsActionLoading(false);
+      setOpenDropdownId(null);
+    },
+  });
+
+  const handleApprove = (withdrawalId: string) => {
+    console.log("withdrawalId ??", withdrawalId);
+    setIsActionLoading(true);
+
+    approveMutation.mutate({ withdrawalId, data: { status: "successful" } });
+  };
+
+  // Decline withdrawal mutation
+  const declineMutation = useMutation({
+    mutationFn: async ({
+      withdrawalId,
+      data,
+    }: {
+      withdrawalId: string;
+      data: any;
+    }) =>
+      userRequest?.patch(
+        `/wallet/admin/withdrawals/${withdrawalId}/status`,
+        data,
+      ), // TODO: Add decline endpoint here
+    onError: (e: any) => {
+      toast({
+        title: "Error",
+        description:
+          e?.response?.data?.message || "Failed to decline withdrawal",
+        variant: "destructive",
+      });
+      setIsActionLoading(false);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["withdrawals"] });
+      toast({
+        title: "Success",
+        description: "Withdrawal declined successfully",
+      });
+      setIsActionLoading(false);
+      setOpenDropdownId(null);
+    },
+  });
+
+  const handleDecline = (withdrawalId: string) => {
+    setIsActionLoading(true);
+    declineMutation.mutate({ withdrawalId, data: { status: "declined" } });
+  };
+
+  // Loading state - must be AFTER all hooks
   if (withdrawalsQuery?.isLoading) {
     return <Loader />;
   }
@@ -86,15 +177,20 @@ const Withdrawals = () => {
               <TableCell>
                 {withdrawal?.userId?.receivingAccount?.accountNumber}
               </TableCell>
-              <TableCell className="capitalize">{withdrawal?.status}</TableCell>
+              <TableCell
+                className={`capitalize ${withdrawal?.status === "pending" ? "text-yellow-500" : withdrawal?.status === "successful" ? "text-green-500" : " text-red-500"}`}
+                //className="capitalize text-kv-primary"
+              >
+                {withdrawal?.status}
+              </TableCell>
               <TableCell>
-                <button
-                  onClick={() =>
-                    navigate(`/wallet/admin/withdrawals/${withdrawal?._id}`)
-                  }
-                  className="text-kv-primary hover:text-orange-600 font-medium"
+                <div
+                  className="relative"
+                  ref={openDropdownId === withdrawal?._id ? dropdownRef : null}
                 >
                   <svg
+                    className="cursor-pointer"
+                    onClick={() => toggleDropdown(withdrawal?._id)}
                     width="18"
                     height="18"
                     viewBox="0 0 18 18"
@@ -114,7 +210,34 @@ const Withdrawals = () => {
                       fill="black"
                     />
                   </svg>
-                </button>
+                  {/* Dropdown Menu */}
+                  {openDropdownId === withdrawal?._id && (
+                    <div className="absolute right-[90px] bottom-[0px] mt-1 z-[9999] flex flex-col bg-white border border-gray-200 rounded-lg shadow-lg min-w-[160px]">
+                      <button
+                        onClick={() => handleApprove(withdrawal?._id)}
+                        disabled={approveMutation.isPending}
+                        className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer"
+                      >
+                        {approveMutation.isPending ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          "Approve"
+                        )}
+                      </button>
+                      <button
+                        onClick={() => handleDecline(withdrawal?._id)}
+                        className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer"
+                        disabled={declineMutation.isPending}
+                      >
+                        {declineMutation.isPending ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          "Decline"
+                        )}
+                      </button>
+                    </div>
+                  )}
+                </div>
               </TableCell>
             </TableRow>
           )}

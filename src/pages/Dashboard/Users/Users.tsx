@@ -20,11 +20,11 @@ import { X, AlertTriangle, Loader2 } from "lucide-react";
 type ModalType = "suspend" | "deactivate" | null;
 
 const Users = () => {
-  const navigate = useNavigate();
+  //const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const [authState] = useContext<any>(AuthContext);
-  const userId = authState?.user?._id;
+  // const userId = authState?.user?._id;
 
   // Dropdown state - tracks which user's dropdown is open
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
@@ -62,25 +62,30 @@ const Users = () => {
         }),
   });
 
-  console.log("usersQuery ??", usersQuery?.data?.results?.data);
+  //console.log("usersQuery ??", usersQuery?.data?.results?.data);
   const usersData = usersQuery?.data?.results?.data;
 
   // Suspend user mutation
   const suspendMutation = useMutation({
-    mutationFn: async (userId: string) => userRequest?.patch(``, { userId }), // TODO: Add suspend endpoint here
+    mutationFn: async ({ userId, user }: { userId: string; user: any }) =>
+      userRequest?.patch(`/bookings/admin/${userId}/suspend`, {
+        value: !user.suspended,
+      }),
+
     onError: (e: any) => {
       toast({
         title: "Error",
-        description: e?.response?.data?.message || "Failed to suspend user",
+        description:
+          e?.response?.data?.message || "Failed to update user status",
         variant: "destructive",
       });
       setIsActionLoading(false);
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
       toast({
         title: "Success",
-        description: "User suspended successfully",
+        description: data?.data?.message || "Successfully updated user status",
       });
       setIsActionLoading(false);
       closeModal();
@@ -89,7 +94,10 @@ const Users = () => {
 
   // Deactivate user mutation
   const deactivateMutation = useMutation({
-    mutationFn: async (userId: string) => userRequest?.patch(``, { userId }), // TODO: Add deactivate endpoint here
+    mutationFn: async ({ userId, user }: { userId: string; user: any }) =>
+      userRequest?.patch(`/bookings/admin/${userId}/block`, {
+        value: !user.blocked,
+      }), // TODO: Add deactivate endpoint here
     onError: (e: any) => {
       toast({
         title: "Error",
@@ -98,11 +106,11 @@ const Users = () => {
       });
       setIsActionLoading(false);
     },
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["users"] });
       toast({
         title: "Success",
-        description: "User deactivated successfully",
+        description: "Successfully updated user status",
       });
       setIsActionLoading(false);
       closeModal();
@@ -128,14 +136,15 @@ const Users = () => {
   };
 
   // Handle confirm action
-  const handleConfirmAction = () => {
+  const handleConfirmAction = (user: any) => {
     if (!selectedUser) return;
     setIsActionLoading(true);
 
     if (modalType === "suspend") {
-      suspendMutation.mutate(selectedUser._id);
+      console.log("user ??", user);
+      suspendMutation.mutate({ userId: user._id, user });
     } else if (modalType === "deactivate") {
-      deactivateMutation.mutate(selectedUser._id);
+      deactivateMutation.mutate({ userId: user._id, user });
     }
   };
 
@@ -219,9 +228,7 @@ const Users = () => {
                           onClick={() => openModal("deactivate", user)}
                           className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer"
                         >
-                          {user?.admindeactivated
-                            ? "Activate User"
-                            : "Deactivate User"}
+                          {user?.blocked ? "Activate User" : "Deactivate User"}
                           {/* /bookings/admin/{userId}/block */}
                         </button>
                       </div>
@@ -257,12 +264,13 @@ const Users = () => {
 
             {/* Title */}
             <h2 className="text-xl font-semibold text-gray-900 text-center mb-3">
-              Suspend User
+              {selectedUser?.suspended ? "Unsuspend" : "Suspend"} User
             </h2>
 
             {/* Description */}
             <p className="text-gray-500 text-center mb-8">
-              Are you sure you want to suspend this User?
+              Are you sure you want to{" "}
+              {selectedUser?.suspended ? "unsuspend" : "suspend"} this User?
             </p>
 
             {/* Action Buttons */}
@@ -274,14 +282,14 @@ const Users = () => {
                 Cancel
               </button>
               <button
-                onClick={handleConfirmAction}
+                onClick={() => handleConfirmAction(selectedUser)}
                 disabled={isActionLoading}
                 className="px-6 py-2.5 bg-[#FF4800] text-white rounded-full text-sm font-medium hover:bg-[#E64100] transition-colors disabled:opacity-50 cursor-pointer min-w-[120px]"
               >
                 {isActionLoading ? (
                   <Loader2 className="w-5 h-5 animate-spin mx-auto" />
                 ) : (
-                  "Yes, Suspend"
+                  `Yes, ${selectedUser?.suspended ? "Unsuspend" : "Suspend"}`
                 )}
               </button>
             </div>
@@ -312,12 +320,13 @@ const Users = () => {
 
             {/* Title */}
             <h2 className="text-xl font-semibold text-gray-900 text-center mb-3">
-              Deactivate User
+              {selectedUser?.blocked ? "Activate" : "Deactivate"} User
             </h2>
 
             {/* Description */}
             <p className="text-gray-500 text-center mb-2">
-              Are you sure you want to deactivate this User?
+              Are you sure you want to{" "}
+              {selectedUser?.blocked ? "activate" : "deactivate"} this User?
             </p>
             <p className="text-gray-500 text-center mb-8">
               This process cannot be undone
@@ -332,14 +341,14 @@ const Users = () => {
                 Cancel
               </button>
               <button
-                onClick={handleConfirmAction}
+                onClick={() => handleConfirmAction(selectedUser)}
                 disabled={isActionLoading}
                 className="px-6 py-2.5 bg-[#FF4800] text-white rounded-full text-sm font-medium hover:bg-[#E64100] transition-colors disabled:opacity-50 cursor-pointer min-w-[130px]"
               >
                 {isActionLoading ? (
                   <Loader2 className="w-5 h-5 animate-spin mx-auto" />
                 ) : (
-                  "Yes, Deactivate"
+                  `Yes, ${selectedUser?.blocked ? "Activate" : "Deactivate"}`
                 )}
               </button>
             </div>
