@@ -73,7 +73,7 @@ const Withdrawals = () => {
           data={withdrawalsData}
           renderRow={(withdrawal: any) => (
             <TableRow key={withdrawal?._id}>
-              <TableCell className="pl-4">
+              <TableCell className="pl-4 pt-5 pb-5">
                 {formatDate(withdrawal?.createdAt)}
               </TableCell>
               <TableCell>{formatPrice(withdrawal?.amount)}</TableCell>

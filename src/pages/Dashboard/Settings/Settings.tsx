@@ -40,6 +40,7 @@ interface AddAdminFormData {
   lastName: string;
   email: string;
   role: string;
+  password: string;
 }
 
 const Settings = () => {
@@ -58,6 +59,7 @@ const Settings = () => {
     lastName: "",
     email: "",
     role: "",
+    password: "password123",
   });
 
   // Profile form state
@@ -193,8 +195,20 @@ const Settings = () => {
   });
 
   // Add Admin mutation
+
+  // {
+  //   "firstName": "John",
+  //   "lastName": "Doe",
+  //   "middleName": "Doe",
+  //   "phoneNumber": "099998877",
+  //   "email": "john.doe@example.com",
+  //   "password": "password123",
+  //   "role": "SUPERADMIN"
+  // }
+
   const addAdminMutation = useMutation({
-    mutationFn: async (data: any) => userRequest?.post(``, data), // TODO: Add endpoint here
+    mutationFn: async (data: any) =>
+      userRequest?.post(`/users/admin/create-admin`, data), // TODO: Add endpoint here
     onError: (e: any) => {
       console.log("ERROR::: ", e?.response?.data?.message);
       toast({
@@ -216,6 +230,7 @@ const Settings = () => {
         firstName: "",
         lastName: "",
         email: "",
+        password: "",
         role: "",
       });
       setAdminView("list");
@@ -281,7 +296,8 @@ const Settings = () => {
       firstName: addAdminData.firstName,
       lastName: addAdminData.lastName,
       email: addAdminData.email,
-      role: addAdminData.role,
+      role: addAdminData.role === "Super Admin" ? "SUPERADMIN" : "ADMIN",
+      password: "password123",
     };
     addAdminMutation.mutate(data);
   };
@@ -293,6 +309,7 @@ const Settings = () => {
       lastName: "",
       email: "",
       role: "",
+      password: "password123",
     });
     setAdminView("list");
   };
@@ -360,6 +377,40 @@ const Settings = () => {
   });
   const administratorsData = administratorsQuery?.data?.results?.data;
   console.log("ADMINISTRATORS DATA::: ", administratorsData);
+
+  // Track which admin is being toggled
+  const [togglingAdminId, setTogglingAdminId] = useState<string | null>(null);
+
+  const toggleAdminActivationMutation = useMutation({
+    mutationFn: async (data: any) =>
+      userRequest?.patch(`/users/admin/toggle-status`, data),
+    onError: (e: any) => {
+      console.log("ERROR::: ", e?.response?.data?.message);
+      toast({
+        title: "Error",
+        description: e?.response?.data?.message || "Sorry an error occured.",
+        variant: "destructive",
+      });
+      setTogglingAdminId(null);
+    },
+    onSuccess: (data: any) => {
+      console.log("DATA::: ", data);
+      queryClient.invalidateQueries({ queryKey: ["administrators"] });
+      toast({
+        title: "Success",
+        description: data?.data?.message,
+      });
+      setTogglingAdminId(null);
+    },
+  });
+
+  const toggleAdminActivation = (adminId: string) => {
+    //console.log("ADMIN ID::: ", adminId);
+    setTogglingAdminId(adminId);
+    toggleAdminActivationMutation.mutate({
+      adminId: adminId,
+    });
+  };
 
   return (
     <div className="min-h-screen pb-10">
@@ -676,11 +727,18 @@ const Settings = () => {
                       <TableCell className="pt-2 pb-2">{admin?.role}</TableCell>
                       <TableCell className="pt-2 pb-2">
                         <div className="flex gap-2">
-                          <p className="text-black font-medium cursor-pointer">
+                          {/* <p className="text-black font-medium cursor-pointer">
                             Edit
-                          </p>
-                          <p className="ml-2 text-kv-primary hover:text-orange-600 font-medium cursor-pointer">
-                            Deactivate
+                          </p> */}
+                          <p
+                            className={`ml-2 font-medium cursor-pointer ${admin?.admindeactivated ? "text-green-500 hover:text-green-600" : "text-red-500 hover:text-red-600"}`}
+                            onClick={() => toggleAdminActivation(admin?._id)}
+                          >
+                            {togglingAdminId === admin?._id
+                              ? "Loading..."
+                              : admin?.admindeactivated
+                                ? "Activate"
+                                : "Deactivate"}
                           </p>
                         </div>
                       </TableCell>

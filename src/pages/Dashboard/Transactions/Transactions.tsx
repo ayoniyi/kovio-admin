@@ -70,7 +70,7 @@ const Transactions = () => {
           data={transactionsData}
           renderRow={(transaction: any) => (
             <TableRow key={transaction?._id}>
-              <TableCell className="ml-4">
+              <TableCell className="ml-4 pt-5 pb-5">
                 {formatDate(transaction?.createdAt)}
               </TableCell>
               <TableCell>

@@ -69,7 +69,7 @@ const VendorRegistration = () => {
           data={vendorRegistrationsData}
           renderRow={(vendor: any) => (
             <TableRow key={vendor?._id}>
-              <TableCell className="pl-4">
+              <TableCell className="pl-4 pt-4 pb-4">
                 {vendor?.businessInfo?.businessName ||
                   vendor?.firstName + " " + vendor?.lastName}
               </TableCell>
@@ -82,8 +82,10 @@ const VendorRegistration = () => {
               </TableCell>
               <TableCell>
                 <button
-                  onClick={() => navigate(`/vendor/vendors/${vendor?._id}`)}
-                  className="text-kv-primary hover:text-orange-600 font-medium"
+                  onClick={() =>
+                    navigate(`/vendor-registrations/${vendor?._id}`)
+                  }
+                  className="cursor-pointer text-kv-primary hover:text-orange-600 font-medium"
                 >
                   View Vendor
                 </button>

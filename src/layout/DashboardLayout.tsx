@@ -29,10 +29,10 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         />
       )}
 
-      {/* Sidebar wrapper for mobile */}
+      {/* Sidebar wrapper - fixed on all screen sizes */}
       <div
         className={`
-          fixed inset-y-0 left-0 z-50 transform transition-transform duration-300 ease-in-out lg:transform-none lg:relative
+          fixed inset-y-0 left-0 z-50 transform transition-transform duration-300 ease-in-out lg:transform-none
           ${isSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
         `}
       >
