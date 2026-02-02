@@ -105,7 +105,7 @@ const CreatePassword = () => {
       });
 
       // Redirect to login or dashboard
-      navigate("/login");
+      navigate("/");
     } catch (error: any) {
       toast({
         title: "Error",

@@ -16,9 +16,11 @@ type TabType = "Business" | "Contact" | "Service" | "Documents";
 
 const VendorRegistrationDetails = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<TabType>("Business");
   const [isDeclineModalOpen, setIsDeclineModalOpen] = useState(false);
   const [declineReason, setDeclineReason] = useState("");
+  const [isActionLoading, setIsActionLoading] = useState(false);
 
   // GET Vendor
   const vendorRegistrationId: string = useParams().vendorRegistrationId || "";
@@ -40,28 +42,6 @@ const VendorRegistrationDetails = () => {
 
   const tabs: TabType[] = ["Business", "Contact", "Service", "Documents"];
 
-  // Loading state
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="w-8 h-8 animate-spin text-kv-primary" />
-      </div>
-    );
-  }
-
-  // Not found state
-  if (!vendorRegistrationData) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <p className="text-gray-600 text-center">
-          Vendor Registration not found.
-        </p>
-      </div>
-    );
-  }
-
-  const queryClient = useQueryClient();
-  const [isActionLoading, setIsActionLoading] = useState(false);
   const vendorApprovalMutation = useMutation({
     mutationFn: async () =>
       userRequest?.patch(
@@ -128,6 +108,26 @@ const VendorRegistrationDetails = () => {
     setIsActionLoading(true);
     vendorDeclineMutation.mutate();
   };
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-8 h-8 animate-spin text-kv-primary" />
+      </div>
+    );
+  }
+
+  // Not found state
+  if (!vendorRegistrationData) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <p className="text-gray-600 text-center">
+          Vendor Registration not found.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen pb-8">

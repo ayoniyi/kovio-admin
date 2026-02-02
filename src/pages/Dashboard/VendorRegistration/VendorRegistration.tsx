@@ -69,7 +69,7 @@ const VendorRegistration = () => {
           data={vendorRegistrationsData}
           renderRow={(vendor: any) => (
             <TableRow key={vendor?._id}>
-              <TableCell className="pl-4 pt-4 pb-4">
+              <TableCell className="pl-4 pt-6 pb-6">
                 {vendor?.businessInfo?.businessName ||
                   vendor?.firstName + " " + vendor?.lastName}
               </TableCell>
