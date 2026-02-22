@@ -191,13 +191,19 @@ const Vendors = () => {
                 {vendor?.businessInfo?.businessName ||
                   vendor?.firstName + " " + vendor?.lastName}
               </TableCell>
-              <TableCell>{vendor?.businessInfo?.businessType}</TableCell>
-
               <TableCell>
-                {vendor?.businessInfo?.businessStreet +
-                  ", " +
-                  vendor?.businessInfo?.city}
+                {vendor?.businessInfo?.businessType || "N/A"}
               </TableCell>
+              {vendor?.businessInfo?.businessStreet &&
+              vendor?.businessInfo?.city ? (
+                <TableCell>
+                  {vendor?.businessInfo?.businessStreet +
+                    ", " +
+                    vendor?.businessInfo?.city}
+                </TableCell>
+              ) : (
+                <TableCell>N/A</TableCell>
+              )}
               <TableCell>
                 <div className="flex items-center relative">
                   <button

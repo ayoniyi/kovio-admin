@@ -32,6 +32,7 @@ const VendorDetails = () => {
   });
 
   const vendorData: any = vendorQuery?.data?.data || vendorQuery?.data;
+  console.log("vendorData ??", vendorData);
   const isLoading = vendorQuery?.isLoading;
 
   const tabs: TabType[] = ["Business", "Contact", "Service", "Documents"];
@@ -177,7 +178,10 @@ function ServiceTab({ vendorData }: { vendorData: any }) {
           label="Venue Capacity"
           value={venueInfo?.venueCapacity?.toString()}
         />
-        <InfoField label="Venue Type" value={venueInfo?.venueType} />
+        <InfoField
+          label="Venue Type"
+          value={venueInfo?.venueType || vendorData?.businessInfo?.businessType}
+        />
         <InfoField
           label="Parking Availability"
           value={venueInfo?.parkingAvailability}

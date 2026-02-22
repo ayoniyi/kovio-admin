@@ -24,13 +24,11 @@ const VendorRegistration = () => {
   const vendorRegistrationsQuery: any = useQuery({
     queryKey: ["vendor-registrations"],
     queryFn: () =>
-      userRequest
-        ?.get(`/bookings/admin/pending/vendors?page=1&limit=10`)
-        .then((res: any) => {
-          return {
-            results: res.data,
-          };
-        }),
+      userRequest?.get(`/bookings/admin/pending/vendors`).then((res: any) => {
+        return {
+          results: res.data,
+        };
+      }),
   });
 
   // console.log(
