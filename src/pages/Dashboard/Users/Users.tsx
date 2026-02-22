@@ -53,13 +53,11 @@ const Users = () => {
   const usersQuery: any = useQuery({
     queryKey: ["users"],
     queryFn: () =>
-      userRequest
-        ?.get(`/bookings/admin/users?page=1&limit=10`)
-        .then((res: any) => {
-          return {
-            results: res.data,
-          };
-        }),
+      userRequest?.get(`/bookings/admin/users`).then((res: any) => {
+        return {
+          results: res.data,
+        };
+      }),
   });
 
   //console.log("usersQuery ??", usersQuery?.data?.results?.data);
