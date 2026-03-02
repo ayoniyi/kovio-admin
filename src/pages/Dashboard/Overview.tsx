@@ -307,31 +307,42 @@ const Overview = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {recentBookingsData?.map((booking: any) => (
-                    <tr
-                      key={booking?._id}
-                      className="border-b border-gray-50 last:border-b-0"
-                    >
-                      <td className="py-3 px-2 text-sm text-gray-700">
-                        {booking?.vendorid?.businessInfo?.businessName ||
-                          booking?.userid?.firstName +
-                            " " +
-                            booking?.userid?.lastName}
-                      </td>
-                      <td className="py-3 px-2 text-sm text-gray-500">
-                        {formatDate(booking?.eventday)}{" "}
-                        {formatTime(booking?.eventtime)}
-                      </td>
-                      <td className="py-3 px-2">
-                        <Link
-                          to={`/bookings/${booking._id}`}
-                          className="text-sm text-[#FF4800] hover:underline font-medium"
-                        >
-                          View
-                        </Link>
+                  {recentBookingsData && recentBookingsData.length > 0 ? (
+                    recentBookingsData.map((booking: any) => (
+                      <tr
+                        key={booking?._id}
+                        className="border-b border-gray-50 last:border-b-0"
+                      >
+                        <td className="py-3 px-2 text-sm text-gray-700">
+                          {booking?.vendorid?.businessInfo?.businessName ||
+                            booking?.userid?.firstName +
+                              " " +
+                              booking?.userid?.lastName}
+                        </td>
+                        <td className="py-3 px-2 text-sm text-gray-500">
+                          {formatDate(booking?.eventday)}{" "}
+                          {formatTime(booking?.eventtime)}
+                        </td>
+                        <td className="py-3 px-2">
+                          <Link
+                            to={`/bookings/${booking._id}`}
+                            className="text-sm text-[#FF4800] hover:underline font-medium"
+                          >
+                            View
+                          </Link>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td
+                        colSpan={3}
+                        className="py-4 pt-6 pb-6 text-center text-lg text-gray-400"
+                      >
+                        No data available
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>
@@ -356,29 +367,41 @@ const Overview = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {recentVendorRegistrationsData
-                    ?.slice(0, 10)
-                    ?.map((registration: any) => (
-                      <tr
-                        key={registration?._id}
-                        className="border-b border-gray-50 last:border-b-0"
+                  {recentVendorRegistrationsData &&
+                  recentVendorRegistrationsData.length > 0 ? (
+                    recentVendorRegistrationsData
+                      .slice(0, 10)
+                      .map((registration: any) => (
+                        <tr
+                          key={registration?._id}
+                          className="border-b border-gray-50 last:border-b-0"
+                        >
+                          <td className="py-3 px-2 text-sm text-gray-700">
+                            {registration?.businessInfo?.businessName ||
+                              registration?.firstName +
+                                " " +
+                                registration?.lastName}
+                          </td>
+                          <td className="py-3 px-2">
+                            <Link
+                              to={`/vendor-registrations/${registration?._id}`}
+                              className="text-sm text-[#FF4800] hover:underline font-medium"
+                            >
+                              View
+                            </Link>
+                          </td>
+                        </tr>
+                      ))
+                  ) : (
+                    <tr>
+                      <td
+                        colSpan={2}
+                        className="py-4 text-center text-sm text-gray-500"
                       >
-                        <td className="py-3 px-2 text-sm text-gray-700">
-                          {registration?.businessInfo?.businessName ||
-                            registration?.firstName +
-                              " " +
-                              registration?.lastName}
-                        </td>
-                        <td className="py-3 px-2">
-                          <Link
-                            to={`/vendor-registrations/${registration?._id}`}
-                            className="text-sm text-[#FF4800] hover:underline font-medium"
-                          >
-                            View
-                          </Link>
-                        </td>
-                      </tr>
-                    ))}
+                        No data available
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>

@@ -15,7 +15,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useUserRequest } from "@/utils/requestMethods";
 import { toast } from "@/hooks/use-toast";
-import { X, AlertTriangle, Loader2 } from "lucide-react";
+import { X, AlertTriangle, Loader2, Search } from "lucide-react";
 
 type ModalType = "suspend" | "deactivate" | null;
 
@@ -25,6 +25,9 @@ const Users = () => {
 
   const [authState] = useContext<any>(AuthContext);
   // const userId = authState?.user?._id;
+
+  // Search state
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Dropdown state - tracks which user's dropdown is open
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
@@ -51,13 +54,17 @@ const Users = () => {
 
   const userRequest = useUserRequest();
   const usersQuery: any = useQuery({
-    queryKey: ["users"],
-    queryFn: () =>
-      userRequest?.get(`/bookings/admin/users`).then((res: any) => {
-        return {
-          results: res.data,
-        };
-      }),
+    queryKey: ["users", searchQuery.length >= 3 ? searchQuery : ""],
+    queryFn: () => {
+      const endpoint =
+        searchQuery.length >= 3
+          ? `/bookings/admin/users?search=${encodeURIComponent(searchQuery)}`
+          : `/bookings/admin/users`;
+      return userRequest?.get(endpoint).then((res: any) => ({
+        results: res.data,
+      }));
+    },
+    placeholderData: (previousData: any) => previousData,
   });
 
   //console.log("usersQuery ??", usersQuery?.data?.results?.data);
@@ -146,14 +153,14 @@ const Users = () => {
     }
   };
 
-  if (usersQuery?.isLoading) {
+  if (usersQuery?.isLoading && !usersData && !searchQuery) {
     return <Loader />;
   }
 
   return (
     <div className="min-h-screen">
       <Card className="rounded-3xl shadow-sm">
-        <div className="pt-0 pb-2 pl-4 pr-4 border-b space-y-4 mb-[-1.5rem]">
+        <div className="pt-0 pb-2 pl-4 pr-4 border-b space-y-4 -mb-6">
           {/* Tabs */}
 
           {/* Your Bookings Header */}
@@ -161,82 +168,123 @@ const Users = () => {
             <h2 className="text-base font-gabaritoHeading lg:text-xl font-semibold tracking-extra-wide text-kv-semi-black">
               All Users
             </h2>
+
+            {/* Search Bar */}
+            <div className="relative w-full max-w-xs">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search users..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-9 py-2 text-sm border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[#FF4800]/30 focus:border-[#FF4800] transition-colors"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
-        <CustomTable
-          headers={[
-            { label: "Name" },
-            { label: "Email" },
-            { label: "Phone Number" },
-            { label: "Total Bookings" },
-            { label: "Action" },
-          ]}
-          data={usersData}
-          renderRow={(user: any) => (
-            <TableRow key={user?._id}>
-              <TableCell className="pl-4 pt-5 pb-5">
-                {user?.firstName} {user?.lastName}
-              </TableCell>
-              <TableCell>{user?.email}</TableCell>
-              <TableCell>{user?.phoneNumber || "N/A"}</TableCell>
-              <TableCell>{user?.bookingCount}</TableCell>
-              <TableCell>
-                <div className="flex items-center relative">
-                  <div
-                    className="relative"
-                    ref={openDropdownId === user?._id ? dropdownRef : null}
-                  >
-                    <button
-                      onClick={() => toggleDropdown(user?._id)}
-                      className="text-kv-primary hover:text-orange-600 font-medium cursor-pointer"
-                    >
-                      <svg
-                        width="18"
-                        height="18"
-                        viewBox="0 0 18 18"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          d="M10.591 0.659007C11.4697 1.53768 11.4697 2.96231 10.591 3.84098C9.71231 4.71966 8.28768 4.71966 7.40901 3.84098C6.53033 2.96231 6.53033 1.53768 7.40901 0.659007C8.28765 -0.219669 9.71227 -0.219669 10.591 0.659007Z"
-                          fill="black"
-                        />
-                        <path
-                          d="M10.591 7.40901C11.4697 8.28768 11.4697 9.71231 10.591 10.591C9.71231 11.4697 8.28768 11.4697 7.40901 10.591C6.53033 9.71231 6.53033 8.28768 7.40901 7.40901C8.28765 6.53033 9.71227 6.53033 10.591 7.40901Z"
-                          fill="black"
-                        />
-                        <path
-                          d="M10.591 14.159C11.4697 15.0377 11.4697 16.4623 10.591 17.341C9.71231 18.2197 8.28768 18.2197 7.40901 17.341C6.53033 16.4623 6.53033 15.0377 7.40901 14.159C8.28765 13.2803 9.71227 13.2803 10.591 14.159Z"
-                          fill="black"
-                        />
-                      </svg>
-                    </button>
-                    {/* Dropdown Menu */}
-                    {openDropdownId === user?._id && (
-                      <div className="absolute right-[20px] bottom-0 mt-1 z-[9999] flex flex-col bg-white border border-gray-200 rounded-lg shadow-lg min-w-[160px]">
-                        <button
-                          onClick={() => openModal("suspend", user)}
-                          className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer"
-                        >
-                          {user?.suspended ? "Unsuspend User" : "Suspend User"}
-                          {/* /bookings/admin/{userId}/suspend */}
-                        </button>
-                        <button
-                          onClick={() => openModal("deactivate", user)}
-                          className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer"
-                        >
-                          {user?.blocked ? "Activate User" : "Deactivate User"}
-                          {/* /bookings/admin/{userId}/block */}
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </TableCell>
-            </TableRow>
+        <div className="relative">
+          {usersQuery?.isFetching && (
+            <div className="absolute inset-0 bg-white/60 z-10 flex items-center justify-center rounded-b-3xl">
+              <Loader2 className="w-6 h-6 animate-spin text-[#FF4800]" />
+            </div>
           )}
-        />
+          <CustomTable
+            headers={[
+              { label: "Name" },
+              { label: "Email" },
+              { label: "Phone Number" },
+              { label: "Total Bookings" },
+              { label: "Action" },
+            ]}
+            data={usersData}
+            emptyState={
+              usersQuery?.isFetching ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={5}
+                    className="h-24 text-center text-gray-500"
+                  ></TableCell>
+                </TableRow>
+              ) : undefined
+            }
+            renderRow={(user: any) => (
+              <TableRow key={user?._id}>
+                <TableCell className="pl-4 pt-5 pb-5">
+                  {user?.firstName} {user?.lastName}
+                </TableCell>
+                <TableCell>{user?.email}</TableCell>
+                <TableCell>{user?.phoneNumber || "N/A"}</TableCell>
+                <TableCell>{user?.bookingCount}</TableCell>
+                <TableCell>
+                  <div className="flex items-center relative">
+                    <div
+                      className="relative"
+                      ref={openDropdownId === user?._id ? dropdownRef : null}
+                    >
+                      <button
+                        onClick={() => toggleDropdown(user?._id)}
+                        className="text-kv-primary hover:text-orange-600 font-medium cursor-pointer"
+                      >
+                        <svg
+                          width="18"
+                          height="18"
+                          viewBox="0 0 18 18"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M10.591 0.659007C11.4697 1.53768 11.4697 2.96231 10.591 3.84098C9.71231 4.71966 8.28768 4.71966 7.40901 3.84098C6.53033 2.96231 6.53033 1.53768 7.40901 0.659007C8.28765 -0.219669 9.71227 -0.219669 10.591 0.659007Z"
+                            fill="black"
+                          />
+                          <path
+                            d="M10.591 7.40901C11.4697 8.28768 11.4697 9.71231 10.591 10.591C9.71231 11.4697 8.28768 11.4697 7.40901 10.591C6.53033 9.71231 6.53033 8.28768 7.40901 7.40901C8.28765 6.53033 9.71227 6.53033 10.591 7.40901Z"
+                            fill="black"
+                          />
+                          <path
+                            d="M10.591 14.159C11.4697 15.0377 11.4697 16.4623 10.591 17.341C9.71231 18.2197 8.28768 18.2197 7.40901 17.341C6.53033 16.4623 6.53033 15.0377 7.40901 14.159C8.28765 13.2803 9.71227 13.2803 10.591 14.159Z"
+                            fill="black"
+                          />
+                        </svg>
+                      </button>
+                      {/* Dropdown Menu */}
+                      {openDropdownId === user?._id && (
+                        <div className="absolute right-[20px] bottom-0 mt-1 z-[9999] flex flex-col bg-white border border-gray-200 rounded-lg shadow-lg min-w-[160px]">
+                          <button
+                            onClick={() => openModal("suspend", user)}
+                            className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer"
+                          >
+                            {user?.suspended
+                              ? "Unsuspend User"
+                              : "Suspend User"}
+                            {/* /bookings/admin/{userId}/suspend */}
+                          </button>
+                          <button
+                            onClick={() => openModal("deactivate", user)}
+                            className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer"
+                          >
+                            {user?.blocked
+                              ? "Activate User"
+                              : "Deactivate User"}
+                            {/* /bookings/admin/{userId}/block */}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </TableCell>
+              </TableRow>
+            )}
+          />
+        </div>
       </Card>
 
       {/* Suspend Modal */}

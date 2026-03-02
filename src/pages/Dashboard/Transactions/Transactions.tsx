@@ -12,6 +12,7 @@ import { formatDate, formatTime } from "../../../utils/formatters";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useUserRequest } from "@/utils/requestMethods";
+import { X, Search, Loader2 } from "lucide-react";
 
 //const TABS = ["New Bookings", "Ongoing", "Completed", "Cancelled"] as const;
 
@@ -24,70 +25,109 @@ const Transactions = () => {
 
   const userRequest = useUserRequest();
   const transactionsQuery: any = useQuery({
-    queryKey: ["transactions"],
-    queryFn: () =>
-      userRequest?.get(`/transactions`).then((res: any) => {
-        return {
-          results: res.data,
-        };
-      }),
+    queryKey: ["transactions", searchQuery.length >= 3 ? searchQuery : ""],
+    queryFn: () => {
+      const endpoint =
+        searchQuery.length >= 3
+          ? `/transactions?search=${encodeURIComponent(searchQuery)}`
+          : `/transactions`;
+      return userRequest?.get(endpoint).then((res: any) => ({
+        results: res.data,
+      }));
+    },
+    placeholderData: (previousData: any) => previousData,
   });
 
   console.log("transactionsQuery ??", transactionsQuery?.data?.results?.data);
   const transactionsData = transactionsQuery?.data?.results?.data;
 
   // Filter bookings based on selected tab
-  if (transactionsQuery?.isLoading) {
+  if (transactionsQuery?.isLoading && !transactionsData && !searchQuery) {
     return <Loader />;
   }
 
   return (
     <div className="min-h-screen">
       <Card className="rounded-3xl shadow-sm">
-        <div className="pt-0 pb-2 pl-4 pr-4 border-b space-y-4 mb-[-1.5rem]">
+        <div className="pt-0 pb-2 pl-4 pr-4 border-b space-y-4 -mb-6">
           {/* Tabs */}
 
-          {/* Search Bar */}
-          <div className="flex items-center justify-between lg:w-[25%] w-full mb-2">
-            <SearchBar
-              placeholder="Search"
-              value={searchQuery}
-              onChange={setSearchQuery}
-              className="w-full"
-            />
+          {/* Search Bar Container */}
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-gabaritoHeading lg:text-xl font-semibold tracking-extra-wide text-kv-semi-black">
+              Transactions
+            </h2>
+
+            {/* Search Bar */}
+            <div className="relative w-full max-w-xs">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search transactions..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-9 py-2 text-sm border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[#FF4800]/30 focus:border-[#FF4800] transition-colors"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
-        <CustomTable
-          headers={[
-            { label: "Date & Time" },
-            { label: "Name" },
-            { label: "Type" },
-            { label: "Method" },
-            { label: "Amount" },
-            { label: "Status" },
-          ]}
-          data={transactionsData}
-          renderRow={(transaction: any) => (
-            <TableRow key={transaction?._id}>
-              <TableCell className="ml-4 pl-4 pt-5 pb-5">
-                {formatDate(transaction?.createdAt)}
-              </TableCell>
-              <TableCell>
-                {transaction?.user?.firstName} {transaction?.user?.lastName}
-              </TableCell>
-              <TableCell className="capitalize">{transaction?.type}</TableCell>
-              <TableCell className="capitalize">
-                {transaction?.method}
-              </TableCell>
-              <TableCell>{transaction?.amount}</TableCell>
-              <TableCell
-                className={`capitalize ${transaction?.status === "pending" ? "text-yellow-500" : transaction?.status === "successful" ? "text-green-500" : " text-red-500"}`}
-                //className="capitalize text-kv-primary"
-              >
-                {transaction?.status}
-              </TableCell>
-              {/* <TableCell>
+        <div className="relative">
+          {transactionsQuery?.isFetching && (
+            <div className="absolute inset-0 bg-white/60 z-10 flex items-center justify-center rounded-b-3xl">
+              <Loader2 className="w-6 h-6 animate-spin text-[#FF4800]" />
+            </div>
+          )}
+          <CustomTable
+            headers={[
+              { label: "Date & Time" },
+              { label: "Name" },
+              { label: "Type" },
+              { label: "Method" },
+              { label: "Amount" },
+              { label: "Status" },
+            ]}
+            data={transactionsData}
+            emptyState={
+              transactionsQuery?.isFetching ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={6}
+                    className="h-24 text-center text-gray-500"
+                  ></TableCell>
+                </TableRow>
+              ) : undefined
+            }
+            renderRow={(transaction: any) => (
+              <TableRow key={transaction?._id}>
+                <TableCell className="ml-4 pl-4 pt-5 pb-5">
+                  {formatDate(transaction?.createdAt)}
+                </TableCell>
+                <TableCell>
+                  {transaction?.user?.firstName} {transaction?.user?.lastName}
+                </TableCell>
+                <TableCell className="capitalize">
+                  {transaction?.type}
+                </TableCell>
+                <TableCell className="capitalize">
+                  {transaction?.method}
+                </TableCell>
+                <TableCell>{transaction?.amount}</TableCell>
+                <TableCell
+                  className={`capitalize ${transaction?.status === "pending" ? "text-yellow-500" : transaction?.status === "successful" ? "text-green-500" : " text-red-500"}`}
+                  //className="capitalize text-kv-primary"
+                >
+                  {transaction?.status}
+                </TableCell>
+                {/* <TableCell>
                 <button
                   onClick={() => navigate(`/transactions/${transaction?._id}`)}
                   className="text-kv-primary hover:text-orange-600 font-medium"
@@ -114,9 +154,10 @@ const Transactions = () => {
                   </svg>
                 </button>
               </TableCell> */}
-            </TableRow>
-          )}
-        />
+              </TableRow>
+            )}
+          />
+        </div>
       </Card>
     </div>
   );

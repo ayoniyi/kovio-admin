@@ -15,7 +15,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useUserRequest } from "@/utils/requestMethods";
 import { toast } from "@/hooks/use-toast";
-import { X, AlertTriangle, Loader2 } from "lucide-react";
+import { X, AlertTriangle, Loader2, Search } from "lucide-react";
 import more from "./more.svg";
 
 type ModalType = "suspend" | "deactivate" | null;
@@ -36,6 +36,9 @@ const Vendors = () => {
   const [selectedVendor, setSelectedVendor] = useState<any>(null);
   const [isActionLoading, setIsActionLoading] = useState(false);
 
+  // Search state
+  const [searchQuery, setSearchQuery] = useState("");
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -52,13 +55,17 @@ const Vendors = () => {
 
   const userRequest = useUserRequest();
   const vendorsQuery: any = useQuery({
-    queryKey: ["vendors"],
-    queryFn: () =>
-      userRequest?.get(`/bookings/admin/vendors`).then((res: any) => {
-        return {
-          results: res.data,
-        };
-      }),
+    queryKey: ["vendors", searchQuery.length >= 3 ? searchQuery : ""],
+    queryFn: () => {
+      const endpoint =
+        searchQuery.length >= 3
+          ? `/bookings/admin/vendors?search=${encodeURIComponent(searchQuery)}`
+          : `/bookings/admin/vendors`;
+      return userRequest?.get(endpoint).then((res: any) => ({
+        results: res.data,
+      }));
+    },
+    placeholderData: (previousData: any) => previousData,
   });
 
   console.log("vendorsQuery > ??", vendorsQuery?.data?.results);
@@ -158,7 +165,7 @@ const Vendors = () => {
     }
   };
 
-  if (vendorsQuery?.isLoading) {
+  if (vendorsQuery?.isLoading && !vendorsData && !searchQuery) {
     return <Loader />;
   }
 
@@ -173,82 +180,119 @@ const Vendors = () => {
             <h2 className="text-base font-gabaritoHeading lg:text-xl font-semibold tracking-extra-wide text-kv-semi-black">
               All Vendors
             </h2>
+
+            {/* Search Bar */}
+            <div className="relative w-full max-w-xs">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search vendors..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-9 py-2 text-sm border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[#FF4800]/30 focus:border-[#FF4800] transition-colors"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
-        <CustomTable
-          headers={[
-            { label: "Vendor Name" },
-            // { label: "Business Name" },
-            { label: "Vendor Type" },
-            { label: "Location" },
-            { label: "Action" },
-          ]}
-          data={vendorsData}
-          renderRow={(vendor: any) => (
-            <TableRow key={vendor?._id}>
-              <TableCell className="pl-4 pt-4 pb-4">
-                {vendor?.businessInfo?.businessName ||
-                  vendor?.firstName + " " + vendor?.lastName}
-              </TableCell>
-              <TableCell>
-                {vendor?.businessInfo?.businessType || "N/A"}
-              </TableCell>
-              {vendor?.businessInfo?.businessStreet &&
-              vendor?.businessInfo?.city ? (
-                <TableCell>
-                  {vendor?.businessInfo?.businessStreet +
-                    ", " +
-                    vendor?.businessInfo?.city}
-                </TableCell>
-              ) : (
-                <TableCell>N/A</TableCell>
-              )}
-              <TableCell>
-                <div className="flex items-center relative">
-                  <button
-                    onClick={() => navigate(`/vendors/${vendor?._id}`)}
-                    className="text-kv-primary hover:text-orange-600 font-medium cursor-pointer"
-                  >
-                    View More
-                  </button>
-                  <div
-                    className="relative"
-                    ref={openDropdownId === vendor?._id ? dropdownRef : null}
-                  >
-                    <img
-                      className="cursor-pointer w-6 h-6 pl-2"
-                      src={more}
-                      alt="more"
-                      onClick={() => toggleDropdown(vendor?._id)}
-                    />
-                    {/* Dropdown Menu */}
-                    {openDropdownId === vendor?._id && (
-                      <div className="absolute right-[20px] bottom-0 mt-1 z-[9999] flex flex-col bg-white border border-gray-200 rounded-lg shadow-lg min-w-[160px]">
-                        <button
-                          onClick={() => openModal("suspend", vendor)}
-                          className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer"
-                        >
-                          {vendor?.suspended
-                            ? "Unsuspend Vendor"
-                            : "Suspend Vendor"}
-                        </button>
-                        <button
-                          onClick={() => openModal("deactivate", vendor)}
-                          className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer"
-                        >
-                          {vendor?.blocked
-                            ? "Activate Vendor"
-                            : "Deactivate Vendor"}
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </TableCell>
-            </TableRow>
+        <div className="relative">
+          {vendorsQuery?.isFetching && (
+            <div className="absolute inset-0 bg-white/60 z-10 flex items-center justify-center rounded-b-3xl">
+              <Loader2 className="w-6 h-6 animate-spin text-[#FF4800]" />
+            </div>
           )}
-        />
+          <CustomTable
+            headers={[
+              { label: "Vendor Name" },
+              // { label: "Business Name" },
+              { label: "Vendor Type" },
+              { label: "Location" },
+              { label: "Action" },
+            ]}
+            data={vendorsData}
+            emptyState={
+              vendorsQuery?.isFetching ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={5}
+                    className="h-24 text-center text-gray-500"
+                  ></TableCell>
+                </TableRow>
+              ) : undefined
+            }
+            renderRow={(vendor: any) => (
+              <TableRow key={vendor?._id}>
+                <TableCell className="pl-4 pt-4 pb-4">
+                  {vendor?.businessInfo?.businessName ||
+                    vendor?.firstName + " " + vendor?.lastName}
+                </TableCell>
+                <TableCell>
+                  {vendor?.businessInfo?.businessType || "N/A"}
+                </TableCell>
+                {vendor?.businessInfo?.businessStreet &&
+                vendor?.businessInfo?.city ? (
+                  <TableCell>
+                    {vendor?.businessInfo?.businessStreet +
+                      ", " +
+                      vendor?.businessInfo?.city}
+                  </TableCell>
+                ) : (
+                  <TableCell>N/A</TableCell>
+                )}
+                <TableCell>
+                  <div className="flex items-center relative">
+                    <button
+                      onClick={() => navigate(`/vendors/${vendor?._id}`)}
+                      className="text-kv-primary hover:text-orange-600 font-medium cursor-pointer"
+                    >
+                      View More
+                    </button>
+                    <div
+                      className="relative"
+                      ref={openDropdownId === vendor?._id ? dropdownRef : null}
+                    >
+                      <img
+                        className="cursor-pointer w-6 h-6 pl-2"
+                        src={more}
+                        alt="more"
+                        onClick={() => toggleDropdown(vendor?._id)}
+                      />
+                      {/* Dropdown Menu */}
+                      {openDropdownId === vendor?._id && (
+                        <div className="absolute right-[20px] bottom-0 mt-1 z-[9999] flex flex-col bg-white border border-gray-200 rounded-lg shadow-lg min-w-[160px]">
+                          <button
+                            onClick={() => openModal("suspend", vendor)}
+                            className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer"
+                          >
+                            {vendor?.suspended
+                              ? "Unsuspend Vendor"
+                              : "Suspend Vendor"}
+                          </button>
+                          <button
+                            onClick={() => openModal("deactivate", vendor)}
+                            className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer"
+                          >
+                            {vendor?.blocked
+                              ? "Activate Vendor"
+                              : "Deactivate Vendor"}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </TableCell>
+              </TableRow>
+            )}
+          />
+        </div>
       </Card>
 
       {/* Suspend Modal */}
