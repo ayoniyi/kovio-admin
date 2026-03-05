@@ -170,6 +170,8 @@ function ServiceTab({ vendorData }: { vendorData: any }) {
   const venueInfo = vendorData?.venueInfo || {};
   const isVenue = vendorData?.role === "OWNER";
 
+ 
+
   // Venue owner view
   if (isVenue) {
     return (
@@ -247,6 +249,11 @@ function ServiceTab({ vendorData }: { vendorData: any }) {
       <InfoField
         label="Customization Options (Do they take special request?)"
         value={serviceDetails?.customizationOptions}
+      />
+
+      <InfoField
+        label="Additional information"
+        value={vendorData?.additionalInformation}
       />
     </div>
   );
