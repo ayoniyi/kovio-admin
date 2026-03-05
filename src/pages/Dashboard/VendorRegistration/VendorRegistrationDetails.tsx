@@ -425,6 +425,11 @@ function ServiceTab({
         label="Customization Options (Do they take special request?)"
         value={serviceDetails?.customizationOptions}
       />
+
+       <InfoField
+        label="Additional information"
+        value={vendorRegistrationData?.additionalInformation}
+      />
     </div>
   );
 }
