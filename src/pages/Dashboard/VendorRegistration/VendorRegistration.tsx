@@ -1,4 +1,4 @@
-import { useContext, useState, useMemo } from "react";
+import { useContext, useState, useCallback } from "react";
 import { Card } from "../../../components/ui/card";
 import { TableCell, TableRow } from "../../../components/ui/table";
 import CustomTable from "../../../components/ui/custom/CustomTable";
@@ -11,7 +11,7 @@ import { formatDate, formatTime } from "../../../utils/formatters";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useUserRequest } from "@/utils/requestMethods";
-import { X, Search, Loader2 } from "lucide-react";
+import { X, Search, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 
 //const TABS = ["New Bookings", "Ongoing", "Completed", "Cancelled"] as const;
 
@@ -24,17 +24,30 @@ const VendorRegistration = () => {
   // Search state
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Reset to page 1 when search query changes
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchQuery(value);
+    setCurrentPage(1);
+  }, []);
+
   const userRequest = useUserRequest();
   const vendorRegistrationsQuery: any = useQuery({
     queryKey: [
       "vendor-registrations",
       searchQuery.length >= 3 ? searchQuery : "",
+      currentPage,
     ],
     queryFn: () => {
-      const endpoint =
-        searchQuery.length >= 3
-          ? `/bookings/admin/pending/vendors?search=${encodeURIComponent(searchQuery)}`
-          : `/bookings/admin/pending/vendors`;
+      const params = new URLSearchParams();
+      params.set("page", String(currentPage));
+      params.set("limit", "10");
+      if (searchQuery.length >= 3) {
+        params.set("search", searchQuery);
+      }
+      const endpoint = `/bookings/admin/pending/vendors?${params.toString()}`;
       return userRequest?.get(endpoint).then((res: any) => ({
         results: res.data,
       }));
@@ -42,11 +55,45 @@ const VendorRegistration = () => {
     placeholderData: (previousData: any) => previousData,
   });
 
-  // console.log(
-  //   "vendorRegistrationsQuery ??",
-  //   vendorRegistrationsQuery?.data?.results,
-  // );
+  console.log(
+    "vendorRegistrationsQuery ??",
+    vendorRegistrationsQuery?.data?.results,
+  );
   const vendorRegistrationsData = vendorRegistrationsQuery?.data?.results?.data;
+  const paginationMeta = vendorRegistrationsQuery?.data?.results;
+  const totalPages = paginationMeta ? Math.ceil(paginationMeta.total / paginationMeta.limit) : 0;
+
+  // Generate page numbers for pagination display
+  const getPageNumbers = () => {
+    const pageNumbers: (number | string)[] = [];
+    const maxPagesToShow = 5;
+
+    if (totalPages <= maxPagesToShow) {
+      for (let i = 1; i <= totalPages; i++) {
+        pageNumbers.push(i);
+      }
+    } else {
+      pageNumbers.push(1);
+      let start = Math.max(2, currentPage - 1);
+      let end = Math.min(totalPages - 1, currentPage + 1);
+      if (currentPage <= 2) {
+        end = 4;
+      } else if (currentPage >= totalPages - 1) {
+        start = totalPages - 3;
+      }
+      if (start > 2) {
+        pageNumbers.push("...");
+      }
+      for (let i = start; i <= end; i++) {
+        pageNumbers.push(i);
+      }
+      if (end < totalPages - 1) {
+        pageNumbers.push("...");
+      }
+      pageNumbers.push(totalPages);
+    }
+    return pageNumbers;
+  };
 
   // Filter bookings based on selected tab
   if (
@@ -76,12 +123,12 @@ const VendorRegistration = () => {
                 type="text"
                 placeholder="Search applications..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => handleSearchChange(e.target.value)}
                 className="w-full pl-9 pr-9 py-2 text-sm border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[#FF4800]/30 focus:border-[#FF4800] transition-colors"
               />
               {searchQuery && (
                 <button
-                  onClick={() => setSearchQuery("")}
+                  onClick={() => handleSearchChange("")}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
                 >
                   <X className="w-4 h-4" />
@@ -142,6 +189,60 @@ const VendorRegistration = () => {
               </TableRow>
             )}
           />
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="px-3 sm:px-5 py-4 bg-gray-50 rounded-b-3xl flex items-center justify-center space-x-1 overflow-x-auto">
+              <div className="flex items-center space-x-1 min-w-max">
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                  disabled={currentPage === 1}
+                  aria-label="Previous page"
+                  className="p-2 rounded-xl hover:bg-gray-200 active:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
+                  style={{ minWidth: "40px", minHeight: "40px" }}
+                >
+                  <ChevronLeft size={18} />
+                </button>
+
+                {getPageNumbers().map((number, index) =>
+                  number === "..." ? (
+                    <span
+                      key={`ellipsis-${index}`}
+                      className="px-2 text-gray-500 select-none"
+                    >
+                      ...
+                    </span>
+                  ) : (
+                    <button
+                      key={`page-${number}`}
+                      onClick={() => setCurrentPage(Number(number))}
+                      aria-label={`Page ${number}`}
+                      aria-current={currentPage === number ? "page" : undefined}
+                      className={`min-w-[35px] min-h-[35px] rounded-3xl flex items-center justify-center text-sm touch-manipulation ${
+                        currentPage === number
+                          ? "bg-kv-secondary hover:bg-kv-secondary text-kv-primary"
+                          : "text-gray-700 hover:bg-kv-secondary active:bg-gray-300"
+                      }`}
+                    >
+                      {number}
+                    </button>
+                  ),
+                )}
+
+                <button
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+                  }
+                  disabled={currentPage === totalPages}
+                  aria-label="Next page"
+                  className="p-2 rounded-md hover:bg-kv-secondary active:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
+                  style={{ minWidth: "40px", minHeight: "40px" }}
+                >
+                  <ChevronRight size={18} />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </Card>
     </div>
