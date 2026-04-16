@@ -210,6 +210,10 @@ function ServiceTab({ vendorData }: { vendorData: any }) {
           label="Payment & Booking Policy"
           value={venueInfo?.paymentBookingPolicy}
         />
+        <InfoField
+        label="Additional information"
+        value={vendorData?.additionalInformation}
+      />
       </div>
     );
   }

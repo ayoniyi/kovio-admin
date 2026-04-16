@@ -63,7 +63,7 @@ const VendorRegistrationDetails = () => {
         description: "Vendor registration approved successfully",
       });
       setIsActionLoading(false);
-      console.log("DATA::: ", data);
+      navigate(-1);
     },
   });
 
@@ -385,6 +385,10 @@ function ServiceTab({
           label="Payment & Booking Policy"
           value={venueInfo?.paymentBookingPolicy}
         />
+        <InfoField
+        label="Additional information"
+        value={vendorRegistrationData?.additionalInformation}
+      />
       </div>
     );
   }
